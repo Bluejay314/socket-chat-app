@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<title>Socket.IO chat</title>
+	<link rel="stylesheet" type="text/css" href="./style.css">
+</head>
+
+<template id="message-template">
+	<li class="sent">
+		<p class="sender-name"></p>
+		<div class="message"></div>
+	</li>
+</template>
+
+<body>
+	<header>
+		<h1>THE LONELY CHAT</h1>
+	</header>
+	<main>
+		<ul id="message-list">
+			<li class="sent">
+				<p class="sender-name">Adam</p>
+				<div class="message">this is a message</div>
+			</li>
+			<li class="received">
+				<p class="sender-name">Eve</p>
+				<div class="message">I like that message</div>
+			</li>
+			<li class="sent">
+				<p class="sender-name">Adam</p>
+				<div class="message">Why did you send that message</div>
+			</li>
+			<li class="received">
+				<p class="sender-name">Eve</p>
+				<div class="message">meow meow meow meow meow</div>
+			</li>
+		</ul>
+		<form id="form" action="">
+			<div id="chat-options">
+				<label>Chat name <input type="text" id="chat-name" value="guest"></input></label>
+				<label>Message Colour: <input type="color" id="colorpicker" value="#0000ff"></label>
+			</div>
+			<div id="chat-send">
+				<input id="input" autocomplete="off" />
+				<button>Send</button>
+			</div>
+			<div id="is-typing"></div>
+		</form>
+	</main>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		const socket = io();
+
+		const form = document.getElementById('form');
+		const input = document.getElementById('input');
+		const messages = document.getElementById('message-list');
+		const user = document.getElementById("chat-name");
+		const isTypingDisplay = document.getElementById("is-typing");
+
+		input.addEventListener('input', (e) => {
+			socket.emit("typing", user.value, input.value !== "");
+		});
+
+		socket.on("typing", (userName, isTyping) => {
+			if (isTyping) {
+				isTypingDisplay.textContent = `${userName} is typing...`;
+			} else {
+				isTypingDisplay.textContent = "";
+			}
+		});
+
+		form.addEventListener('submit', (e) => {
+			e.preventDefault();
+			if (input.value) {
+				socket.emit('chat message', input.value, user.value);
+				input.value = '';
+			}
+		});
+
+		socket.on("chat message", (msg, state, userName) => {
+			const newMessage = addMessage(msg, state, userName);
+			window.scrollTo(0, document.body.scrollHeight);
+		});
+
+		function addMessage(msg, state, userName) {
+        	const item = document.getElementById("message-template").content.cloneNode(true);
+			console.log(userName)
+			item.querySelector("li").classList.add(state);
+			item.querySelector(".sender-name").innerText = userName;
+        	item.querySelector(".message").innerText = msg;
+        	messages.appendChild(item);
+    	}
+	</script>
+</body>
+
+</html>
